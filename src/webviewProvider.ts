@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { Project } from './extension';
 import { loadResourceFile } from './utils/resourceLoader';
 import { generateGradient, getContrastColor } from './utils/colorUtils';
+import * as React from 'react';
+import * as ReactDOMServer from 'react-dom/server';
+import HelloWorld from './template/HelloWorld.tsx';
 
 export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'awesomeProjectsView';
@@ -223,12 +226,15 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
             version += ' Preview - Please report Issues';
         }
 
+        const helloWorldHtml = ReactDOMServer.renderToString(React.createElement(HelloWorld));
+
         return `<!DOCTYPE html>
-            <html>
+            <html></html>
             <head>
                 <style>${cssContent}</style>
             </head>
             <body>
+                ${helloWorldHtml}
                 <div class="section">
                     <div class="section-header">My Projects</div>
                     <div id="loading-spinner" class="loading-spinner hidden"></div>
