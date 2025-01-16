@@ -226,16 +226,14 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
         const headerHtml = ReactDOMServer.renderToString(React.createElement(Header));
 
         return `<!DOCTYPE html>
-            <html></html>
-            <head>
-                <style>${cssContent}</style>
-            </head>
-            <body>
-
-                ${headerHtml}
-
-
-            </body>
-            </html>`;
+            <html>
+                <head>
+                    <style>${cssContent}</style>
+                </head>
+                <body>
+                    ${headerHtml}
+                </body>
+            </html>
+        `;
     }
 }
