@@ -1,15 +1,29 @@
 /****************************************************
  * Header Styles
  ****************************************************/
+header {
+    background-color: var(--vscode-sideBarActivityBarTop-border);
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1rem;
+    gap: 1rem;
+    color: var(--vscode-foreground);
 
-h1 {
-    color: var(--vscode-textLink-foreground)
-}
+    svg.logo {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
 
-/****************************************************
+    h1 {
+        margin: 0;
+        font-size: 1.25rem;
+    }
+ }
+
+ /****************************************************
  * General Styles
  ****************************************************/
-
 body {
     padding: 0;
     margin: 0;

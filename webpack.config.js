@@ -35,19 +35,9 @@ const extensionConfig = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader',
-            options: {
-              transpileOnly: true,
-              compilerOptions: {
-                jsx: 'react'
-              }
-            }
+            loader: 'ts-loader'
           }
         ]
-      },
-      {
-        test: /\.(png|jpe?g|gif|svg)$/i,
-        type: 'asset/resource'
       }
     ]
   },
@@ -61,10 +51,6 @@ const extensionConfig = {
         {
           from: 'src/css',
           to: 'css'
-        },
-        {
-          from: 'resources',
-          to: 'resources'
         }
       ]
     })

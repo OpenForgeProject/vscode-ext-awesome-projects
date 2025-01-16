@@ -211,7 +211,6 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
             console.error('Failed to load CSS:', error);
             cssContent = `
                 body { padding: 0; margin: 0; }
-                .section { margin-bottom: 20px; }
             `;
         }
 
