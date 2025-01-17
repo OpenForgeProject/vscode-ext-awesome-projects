@@ -53,6 +53,10 @@ header {
         border-radius: 3px;
         font-size: 0.6rem;
     }
+
+    .button {
+        padding: .25rem .5rem;
+    }
 }
 
 .button {
@@ -62,8 +66,8 @@ header {
     color: var(--vscode-button-foreground);
     background-color: var(--vscode-button-background);
     text-decoration: none;
-    padding: 0.5rem 1rem;
     border-radius: 0.25rem;
+    padding: 0.5rem 1rem;
     box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease-in-out;
     white-space: nowrap;
