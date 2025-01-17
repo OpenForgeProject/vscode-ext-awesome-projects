@@ -1,16 +1,24 @@
 import * as vscode from 'vscode';
 import { Project } from './extension';
-import { loadResourceFile } from './utils/resourceLoader';
-import { generateGradient, getContrastColor } from './utils/colorUtils';
 import * as React from 'react';
 import * as ReactDOMServer from 'react-dom/server';
+import { loadResourceFile } from './utils/resourceLoader';
 import Header from './template/header';
+import Footer from './template/footer';
 
+/**
+ * Provides a webview for displaying projects.
+ */
 export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'awesomeProjectsView';
     private _view?: vscode.WebviewView;
     private _disposables: vscode.Disposable[] = [];
 
+    /**
+     * Creates an instance of ProjectsWebviewProvider.
+     * @param {vscode.Uri} _extensionUri - The URI of the extension.
+     * @param {vscode.ExtensionContext} _context - The extension context.
+     */
     constructor(
         private readonly _extensionUri: vscode.Uri,
         private readonly _context: vscode.ExtensionContext
@@ -24,10 +32,20 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
         );
     }
 
+    /**
+     * Gets the current webview view.
+     * @returns {vscode.WebviewView | undefined} The current webview view.
+     */
     public getView(): vscode.WebviewView | undefined {
         return this._view;
     }
 
+    /**
+     * Resolves the webview view.
+     * @param {vscode.WebviewView} webviewView - The webview view to resolve.
+     * @param {vscode.WebviewViewResolveContext} _context - The context for resolving the webview view.
+     * @param {vscode.CancellationToken} token - A cancellation token.
+     */
     public async resolveWebviewView(
         webviewView: vscode.WebviewView,
         _context: vscode.WebviewViewResolveContext,
@@ -40,160 +58,21 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
         };
 
         webviewView.webview.html = await this._getHtmlForWebview(webviewView.webview);
-
-        webviewView.webview.onDidReceiveMessage(message => {
-            switch (message.command) {
-                case 'addProject':
-                    vscode.window.showOpenDialog({
-                        canSelectFolders: true,
-                        canSelectMany: false
-                    }).then(async folderUri => {
-                        if (folderUri && folderUri[0]) {
-                            try {
-                                const projectPath = folderUri[0].fsPath;
-                                const configuration = vscode.workspace.getConfiguration('awesomeProjects');
-                                const projects: Project[] = configuration.get('projects') || [];
-
-                                const newProject: Project = {
-                                    path: projectPath,
-                                    name: await vscode.window.showInputBox({
-                                        prompt: 'Enter project name',
-                                        value: projectPath.split('/').pop()
-                                    }) || projectPath.split('/').pop() || ''
-                                };
-
-                                await configuration.update(
-                                    'projects',
-                                    [...projects, newProject],
-                                    vscode.ConfigurationTarget.Global
-                                );
-
-                                const updatedProjects = configuration.get<Project[]>('projects');
-                                if (updatedProjects?.some(p => p.path === newProject.path)) {
-                                    this.refresh();
-                                } else {
-                                    throw new Error('Failed to save project to settings');
-                                }
-                            } catch (error) {
-                                vscode.window.showErrorMessage(`Failed to add project: ${error}`);
-                            }
-                        }
-                    });
-                    break;
-                case 'openProject':
-                    vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(message.project));
-                    break;
-                case 'projectSelected':
-                    vscode.window.showInformationMessage(`Project selected: ${message.path}`);
-                    break;
-                case 'updateProject':
-                    this._updateProject(message.projectPath, message.updates);
-                    break;
-                case 'openUrl':
-                    vscode.env.openExternal(vscode.Uri.parse(message.url));
-                    break;
-                case 'openInFinder':
-                    vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(message.path));
-                    break;
-                case 'deleteProject':
-                    vscode.window.showWarningMessage('Do you really want to delete this project?', 'Yes', 'No')
-                        .then(selection => {
-                            if (selection === 'Yes') {
-                                this._deleteProject(message.projectPath);
-                            }
-                        });
-                    break;
-                case 'reorderProjects':
-                    this._reorderProjects(message.oldIndex, message.newIndex);
-                    break;
-                case 'showInFileManager':
-                    vscode.commands.executeCommand('awesome-projects.showInFileManager', message.project);
-                    break;
-            }
-        });
     }
 
-    private async _updateProject(projectPath: string, updates: Partial<Project>) {
-        try {
-            if (updates.color) {
-                const isValidHex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
-                if (!isValidHex.test(updates.color)) {
-                    throw new Error('Invalid color format');
-                }
-            }
-
-            const urlFields: (keyof Pick<Project, 'productionUrl' | 'devUrl' | 'stagingUrl' | 'managementUrl'>)[] = [
-                'productionUrl',
-                'devUrl',
-                'stagingUrl',
-                'managementUrl'
-            ];
-
-            urlFields.forEach(field => {
-                const value = updates[field];
-                if (typeof value === 'string' && value && !/^https?:\/\//i.test(value)) {
-                    updates[field] = `https://${value}`;
-                }
-            });
-
-            const configuration = vscode.workspace.getConfiguration('awesomeProjects');
-            const projects = [...(configuration.get<Project[]>('projects') || [])];
-            const projectIndex = projects.findIndex(p => p.path === projectPath);
-
-            if (projectIndex !== -1) {
-                projects[projectIndex] = { ...projects[projectIndex], ...updates };
-                await configuration.update('projects', projects, vscode.ConfigurationTarget.Global);
-                this.refresh();
-            }
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to update project: ${error}`);
-        }
-    }
-
-    private async _deleteProject(projectPath: string) {
-        try {
-            const configuration = vscode.workspace.getConfiguration('awesomeProjects');
-            const projects = [...(configuration.get<Project[]>('projects') || [])];
-            const projectIndex = projects.findIndex(p => p.path === projectPath);
-
-            if (projectIndex !== -1) {
-                projects.splice(projectIndex, 1);
-                await configuration.update('projects', projects, vscode.ConfigurationTarget.Global);
-                this.refresh();
-            }
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to delete project: ${error}`);
-        }
-    }
-
-    private async _reorderProjects(oldIndex: number, newIndex: number) {
-        try {
-            this._setLoading(true);
-            const configuration = vscode.workspace.getConfiguration('awesomeProjects');
-            const projects = [...(configuration.get<Project[]>('projects') || [])];
-            const [movedProject] = projects.splice(oldIndex, 1);
-            projects.splice(newIndex, 0, movedProject);
-            await configuration.update('projects', projects, vscode.ConfigurationTarget.Global);
-            this.refresh();
-        } catch (error) {
-            vscode.window.showErrorMessage(`Failed to reorder projects: ${error}`);
-        } finally {
-            this._setLoading(false);
-        }
-    }
-
-    private _setLoading(isLoading: boolean) {
-        if (this._view) {
-            this._view.webview.postMessage({ command: 'setLoading', isLoading });
-        }
-    }
-
+    /**
+     * Refreshes the webview content.
+     */
     public async refresh() {
         if (this._view) {
+            vscode.window.showInformationMessage('The webview has been refreshed.');
             this._view.webview.html = await this._getHtmlForWebview(this._view.webview);
         }
     }
 
+    /**
+     * Disposes of the provider and its resources.
+     */
     public dispose() {
         while (this._disposables.length) {
             const disposable = this._disposables.pop();
@@ -203,7 +82,12 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
         }
     }
 
-    private async _getHtmlForWebview(webview: vscode.Webview) {
+    /**
+     * Gets the HTML content for the webview.
+     * @param {vscode.Webview} webview - The webview to get HTML for.
+     * @returns {Promise<string>} The HTML content for the webview.
+     */
+    private async _getHtmlForWebview(webview: vscode.Webview): Promise<string> {
         let cssContent;
         try {
             cssContent = await loadResourceFile(this._context, 'dist/css/styles.css');
@@ -214,11 +98,8 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
             `;
         }
 
-        const configuration = vscode.workspace.getConfiguration('awesomeProjects');
-        const projects = configuration.get<Project[]>('projects') || [];
-        const useFavicons = configuration.get<boolean>('useFavicons') ?? true;
-
         const headerHtml = ReactDOMServer.renderToString(React.createElement(Header));
+        const footerHtml = ReactDOMServer.renderToString(React.createElement(Footer));
 
         return `<!DOCTYPE html>
             <html>
@@ -227,6 +108,7 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
                 </head>
                 <body>
                     ${headerHtml}
+                    ${footerHtml}
                 </body>
             </html>
         `;
