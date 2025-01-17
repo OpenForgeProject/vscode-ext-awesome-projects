@@ -217,10 +217,6 @@ export class ProjectsWebviewProvider implements vscode.WebviewViewProvider {
         const configuration = vscode.workspace.getConfiguration('awesomeProjects');
         const projects = configuration.get<Project[]>('projects') || [];
         const useFavicons = configuration.get<boolean>('useFavicons') ?? true;
-        let version = require('../package.json').version;
-        if (parseFloat(version) < 1.0) {
-            version += ' Preview - Please report Issues';
-        }
 
         const headerHtml = ReactDOMServer.renderToString(React.createElement(Header));
 
