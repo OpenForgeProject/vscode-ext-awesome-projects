@@ -3,8 +3,6 @@ import React from "react";
 const Footer: React.FC = () => {
   return (
     <footer>
-        <div className="githubLinks">
-        </div>
         <a href="https://github.com/OpenForgeProject/vscode-ext-awesome-projects/issues/new?template=bug_report.md" target="_blank" rel="noopener noreferrer" aria-label="Report an Issue">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke="none" d="M0 0h24v24H0z"/>
